@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>妙麗的狗狗年齡計算儀 | Canine Chronometer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=EB+Garamond:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --parchment: #f4f1ea;
+            --ink: #2c2c2c;
+            --forest-green: #1b3022;
+            --gold: #c5a059;
+            --burgundy: #630d0d;
+        }
+
+        body {
+            background-color: var(--forest-green);
+            background-image: url('https://www.transparenttextures.com/patterns/dark-leather.png');
+            font-family: 'EB+Garamond', serif;
+            color: var(--ink);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .study-desk {
+            background-color: var(--parchment);
+            background-image: url('https://www.transparenttextures.com/patterns/paper.png');
+            max-width: 500px;
+            width: 100%;
+            padding: 3rem;
+            border-radius: 8px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 0 100px rgba(197, 160, 89, 0.1);
+            border: 1px solid var(--gold);
+            position: relative;
+        }
+
+        .study-desk::before {
+            content: '';
+            position: absolute;
+            top: 10px; left: 10px; right: 10px; bottom: 10px;
+            border: 1px solid var(--gold);
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            color: var(--burgundy);
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            letter-spacing: 1px;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-style: italic;
+            color: #555;
+            margin-bottom: 2rem;
+            border-bottom: 1px double var(--gold);
+            padding-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+        }
+
+        input[type="date"], input[type="text"] {
+            width: 100%;
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid var(--ink);
+            padding: 0.5rem;
+            margin-bottom: 1.5rem;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            border-bottom: 2px solid var(--burgundy);
+        }
+
+        .calculate-btn {
+            width: 100%;
+            background-color: var(--forest-green);
+            color: var(--parchment);
+            padding: 1rem;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1rem;
+            border: 1px solid var(--gold);
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 1rem;
+        }
+
+        .calculate-btn:hover {
+            background-color: var(--burgundy);
+            letter-spacing: 2px;
+        }
+
+        #result-area {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            border: 1px dashed var(--gold);
+            display: none;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        .result-value {
+            font-size: 2.5rem;
+            font-family: 'Playfair Display', serif;
+            color: var(--burgundy);
+            display: block;
+            text-align: center;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .feather-icon {
+            text-align: center;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="study-desk">
+    <div class="feather-icon">✒️</div>
+    <h1>Canine Chronometer</h1>
+    <p class="subtitle">「這不是魔法，是精確的算術占卜。」</p>
+
+    <div class="form-group">
+        <label for="dogName">狗狗的姓名</label>
+        <input type="text" id="dogName" placeholder="例如：牙牙 (Fang)">
+
+        <label for="birthDate">出生日期</label>
+        <input type="date" id="birthDate">
+
+        <button class="calculate-btn" onclick="calculateAge()">進行運算</button>
+    </div>
+
+    <div id="result-area">
+        <p id="result-text" style="text-align: center; font-size: 1.1rem;">
+            根據格蘭傑教授的換算公式...
+        </p>
+        <span class="result-value" id="humanAgeDisplay">0</span>
+        <p style="text-align: center; font-style: italic; margin-top: 10px; color: #666;">歲 (人類年齡等值)</p>
+    </div>
+</div>
+
+<script>
+    // 初始化：檢查 localStorage 是否有舊資料
+    window.onload = function() {
+        const savedData = localStorage.getItem('lastDogCalc');
+        if (savedData) {
+            const data = JSON.parse(savedData);
+            document.getElementById('dogName').value = data.name;
+            document.getElementById('birthDate').value = data.birthDate;
+            displayResult(data.name, data.humanAge);
+        }
+    };
+
+    function calculateAge() {
+        const name = document.getElementById('dogName').value || "你的狗狗";
+        const birthDateVal = document.getElementById('birthDate').value;
+
+        if (!birthDateVal) {
+            alert("請選擇出生日期，格蘭傑小姐不允許模糊的數據。");
+            return;
+        }
+
+        const birthDate = new Date(birthDateVal);
+        const today = new Date();
+
+        if (birthDate > today) {
+            alert("除非你有時光器，否則不可能選擇未來的日期。");
+            return;
+        }
+
+        // 計算實際年齡（精確到小數點）
+        let ageInYears = (today - birthDate) / (1000 * 60 * 60 * 24 * 365.25);
+        let humanAge = 0;
+
+        // 妙麗建議的 15-9-5 換算邏輯
+        if (ageInYears <= 1) {
+            humanAge = ageInYears * 15;
+        } else if (ageInYears <= 2) {
+            humanAge = 15 + (ageInYears - 1) * 9;
+        } else {
+            humanAge = 24 + (ageInYears - 2) * 5;
+        }
+
+        humanAge = humanAge.toFixed(1);
+
+        // 儲存至 localStorage
+        const calcData = {
+            name: name,
+            birthDate: birthDateVal,
+            humanAge: humanAge
+        };
+        localStorage.setItem('lastDogCalc', JSON.stringify(calcData));
+
+        displayResult(name, humanAge);
+    }
+
+    function displayResult(name, age) {
+        const resultArea = document.getElementById('result-area');
+        const ageDisplay = document.getElementById('humanAgeDisplay');
+        const textDisplay = document.getElementById('result-text');
+
+        textDisplay.innerText = `經過嚴密的邏輯換算，${name} 的成熟度相當於：`;
+        ageDisplay.innerText = age;
+        resultArea.style.display = 'block';
+    }
+</script>
+
+</body>
+</html>
